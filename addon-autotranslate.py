@@ -69,7 +69,7 @@ def translate_docs(readme_path, addon_dir, model, languages):
 	with open(readme_path, "r", encoding="utf-8") as f:
 		content = f.read()
 	for lang in languages:
-		prompt_text = DOC_TRANSLATION_PROMPT + "\nLanguage: " + lang + "\n\n" + content
+		prompt_text = f"{DOC_TRANSLATION_PROMPT}\nLanguage: {lang}\n\n{content}"
 		translated = prompt_ai(model, prompt_text, fenced=True)
 		output_dir = os.path.join(addon_dir, "doc", lang)
 		os.makedirs(output_dir, exist_ok=True)
@@ -96,16 +96,7 @@ def translate_manifests(addon_dir, model, languages):
 		manifest_dir = os.path.join(addon_dir, "locale", lang)
 		manifest_file = os.path.join(manifest_dir, "manifest.ini")
 		os.makedirs(manifest_dir, exist_ok=True)
-		prompt_text = (
-			MANIFEST_TRANSLATION_PROMPT
-			+ "\nLanguage: "
-			+ lang
-			+ "\n"
-			+ "exclusions: "
-			+ ", ".join(protected_keys)
-			+ "\n\n"
-			+ manifest_ini
-		)
+		prompt_text = f"{MANIFEST_TRANSLATION_PROMPT}\nLanguage: {lang}\nexclusions: {', '.join(protected_keys)}\n\n{manifest_ini}"
 		translated_manifest = prompt_ai(model, prompt_text, fenced=False)
 		with open(manifest_file, "w", encoding="utf-8") as f:
 			f.write(translated_manifest)
@@ -118,13 +109,7 @@ def translate_messages(author, addon_dir, pot_file, model, languages):
 	for lang in languages:
 		po_file = os.path.join(addon_dir, "locale", lang, "LC_MESSAGES", "nvda.po")
 		os.makedirs(os.path.dirname(po_file), exist_ok=True)
-		prompt_text = (
-			POT_TO_PO_PROMPT.replace("{language}", lang).replace(
-				"{Last-Translator}", author
-			)
-			+ "\n\n"
-			+ pot_content
-		)
+		prompt_text = f"{POT_TO_PO_PROMPT.replace('{language}', lang).replace('{Last-Translator}', author)}\n\n{pot_content}"
 		translated_po = prompt_ai(model, prompt_text, fenced=True)
 		with open(po_file, "w", encoding="utf-8") as f:
 			f.write(translated_po)
@@ -214,11 +199,7 @@ def run(
 	langs = languages if isinstance(languages, list) else languages.split()
 	pretty_langs = validate_languages(langs)
 	model = get_llm_model(model_name)
-	print(
-		"Translating {} to language(s): {} using {}".format(
-			addon_name, ", ".join(pretty_langs), model.model_id
-		)
-	)
+	print(f"Translating {addon_name} to language(s): {', '.join(pretty_langs)} using {model.model_id}")
 	print("Documentation...")
 	translate_docs(readme, addon_dir, model, langs)
 	print("Manifests...")
