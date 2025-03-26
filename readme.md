@@ -20,29 +20,23 @@ With AutoTranslate you get to focus on development while letting AI handle most 
 ## Installation
 
 1. Clone the repository:
-	```bash
-	git clone https://github.com/cartertemm/nvda-addon-autotranslate.git
-	cd nvda-addon-autotranslate
-	```
+```
+git clone https://github.com/cartertemm/nvda-addon-autotranslate.git
+cd nvda-addon-autotranslate
+```
 
 2. Install LLM (if not already available):
-	```bash
-	pip install llm
-	```
+```
+pip install llm
+```
 
 3. Configure LLM. By default, only OpenAI models are supported. You can change this by running `llm install` on any of the many [LLM plugins](https://llm.datasette.io/en/stable/plugins/directory.html#plugin-directory). For example, to work with the Claude family:
-```bash
-	llm install llm-anthropic
+```
+llm install llm-anthropic
 ```
 
 4. Specify an API key. The easiest way is to do so through LLM directly:
-```bash
-	llm keys set openai
-```
-or
-```bash
-	llm keys set anthropic
-```
+```llm keys set openai``` or ```llm keys set anthropic```
 
 5. LLM will default to gpt-4o-mini. You can override this when you invoke addon-autotranslate with the `-m` parameter (more on this below). Or to save a little typing, just do `llm models default model_name`.
 
