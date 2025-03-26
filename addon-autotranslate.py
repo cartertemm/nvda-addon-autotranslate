@@ -27,6 +27,11 @@ Output only the resulting PO file text with no additional commentary."""
 
 
 def get_author_info_from_git():
+	"""Get stored Git user name and email.
+
+	Returns:
+		tuple: (name, email) from git configuration.
+	"""
 	try:
 		name = subprocess.check_output("git config user.name").decode()
 		email = subprocess.check_output("git config user.email").decode()
@@ -38,11 +43,23 @@ def get_author_info_from_git():
 	return name.strip(), email.strip()
 
 
-def get_llm_model(name):
+def get_llm(name):
+	"""Get the LLM model instance.
+	Name can be partial, like GPT-4o."""
 	return llm.get_model(name)
 
 
 def prompt_ai(model, text, fenced=True):
+	"""Prompt the AI model with the given text.
+
+	Args:
+		model: The language model instance. Call `get_llm()` to get this.
+		text (str): The prompt text to send to the model.
+		fenced (bool): Whether to extract a fenced code block from the response.
+
+	Returns:
+		str: The response from the AI model.
+	"""
 	response = model.prompt(text).text()
 	if fenced:
 		cb = llm.utils.extract_fenced_code_block(response)
@@ -54,6 +71,7 @@ def prompt_ai(model, text, fenced=True):
 
 
 def validate_languages(languages):
+	"""Validate and process a list of languages (either str or sequence), returning the processed language codes."""
 	newlangs = []
 	for lang in languages:
 		lang = gettext._expand_lang(lang)
@@ -198,7 +216,7 @@ def run(
 		raise FileNotFoundError(f"Error: The readme file {readme} does not exist.")
 	langs = languages if isinstance(languages, list) else languages.split()
 	pretty_langs = validate_languages(langs)
-	model = get_llm_model(model_name)
+	model = get_llm(model_name)
 	print(f"Translating {addon_name} to language(s): {', '.join(pretty_langs)} using {model.model_id}")
 	print("Documentation...")
 	translate_docs(readme, addon_dir, model, langs)
