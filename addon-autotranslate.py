@@ -31,7 +31,9 @@ def get_author_info_from_git():
 		name = subprocess.check_output("git config user.name").decode()
 		email = subprocess.check_output("git config user.email").decode()
 	except (FileNotFoundError, subprocess.CalledProcessError):
-		print(f"Error obtaining author information from git. Either git is not installed, or the user.name and user.email configuration options have not been defined.")
+		print(
+			f"Error obtaining author information from git. Either git is not installed, or the user.name and user.email configuration options have not been defined."
+		)
 		sys.exit(1)
 	return name.strip(), email.strip()
 
@@ -78,15 +80,32 @@ def translate_docs(readme_path, addon_dir, model, languages):
 
 
 def translate_manifests(addon_dir, model, languages):
-	"""Translates manifest.ini into the specified languages."""
-	protected_keys = {"name", "author", "url", "version", "docFileName", "minimumNVDAVersion", "lastTestedNVDAVersion", "updateChannel"}  # never alter these keys" values
+	protected_keys = {
+		"name",
+		"author",
+		"url",
+		"version",
+		"docFileName",
+		"minimumNVDAVersion",
+		"lastTestedNVDAVersion",
+		"updateChannel",
+	}  # never alter these keys" values
 	with open(os.path.join(addon_dir, "manifest.ini"), "r", encoding="utf-8") as f:
 		manifest_ini = f.read()
 	for lang in languages:
 		manifest_dir = os.path.join(addon_dir, "locale", lang)
 		manifest_file = os.path.join(manifest_dir, "manifest.ini")
 		os.makedirs(manifest_dir, exist_ok=True)
-		prompt_text = MANIFEST_TRANSLATION_PROMPT + "\nLanguage: " + lang + "\n" + "exclusions: "+ ", ".join(protected_keys) + "\n\n" + manifest_ini
+		prompt_text = (
+			MANIFEST_TRANSLATION_PROMPT
+			+ "\nLanguage: "
+			+ lang
+			+ "\n"
+			+ "exclusions: "
+			+ ", ".join(protected_keys)
+			+ "\n\n"
+			+ manifest_ini
+		)
 		translated_manifest = prompt_ai(model, prompt_text, fenced=False)
 		with open(manifest_file, "w", encoding="utf-8") as f:
 			f.write(translated_manifest)
@@ -99,7 +118,13 @@ def translate_messages(author, addon_dir, pot_file, model, languages):
 	for lang in languages:
 		po_file = os.path.join(addon_dir, "locale", lang, "LC_MESSAGES", "nvda.po")
 		os.makedirs(os.path.dirname(po_file), exist_ok=True)
-		prompt_text = POT_TO_PO_PROMPT.replace("{language}", lang).replace("{Last-Translator}", author) + "\n\n" + pot_content
+		prompt_text = (
+			POT_TO_PO_PROMPT.replace("{language}", lang).replace(
+				"{Last-Translator}", author
+			)
+			+ "\n\n"
+			+ pot_content
+		)
 		translated_po = prompt_ai(model, prompt_text, fenced=True)
 		with open(po_file, "w", encoding="utf-8") as f:
 			f.write(translated_po)
@@ -108,18 +133,52 @@ def translate_messages(author, addon_dir, pot_file, model, languages):
 
 def parse_args():
 	import argparse
+
 	parser = argparse.ArgumentParser(description="NVDA Add-on AutoTranslate")
-	parser.add_argument("-i", "--input", default="addon", help="Input directory containing the addon")
-	parser.add_argument("-l", "--languages", default="es", help="Languages to translate to, separated by spaces")
+	parser.add_argument(
+		"-i", "--input", default="addon", help="Input directory containing the addon"
+	)
+	parser.add_argument(
+		"-l",
+		"--languages",
+		default="es",
+		help="Languages to translate to, separated by spaces",
+	)
 	parser.add_argument("-p", "--pot", help="Path to the pot file")
-	parser.add_argument("-r", "--readme", help="Path to the readme file with the add-ons documentation, defaults to readme.md.", default="readme.md")
-	parser.add_argument("--author-name", help="Author name. If not provided, defaults to the user.name setting from the git configuration.", default=None)
-	parser.add_argument("--author-email", help="Author email. If not provided, defaults to the user.email setting from the git configuration.", default=None)
-	parser.add_argument("-m", "--model", help="The full or short name of the large language model to use, e.g. 4o for GPT-4O. Defaults to the one used by the llm tool.", default=None)
+	parser.add_argument(
+		"-r",
+		"--readme",
+		help="Path to the readme file with the add-ons documentation, defaults to readme.md.",
+		default="readme.md",
+	)
+	parser.add_argument(
+		"--author-name",
+		help="Author name. If not provided, defaults to the user.name setting from the git configuration.",
+		default=None,
+	)
+	parser.add_argument(
+		"--author-email",
+		help="Author email. If not provided, defaults to the user.email setting from the git configuration.",
+		default=None,
+	)
+	parser.add_argument(
+		"-m",
+		"--model",
+		help="The full or short name of the large language model to use, e.g. 4o for GPT-4O. Defaults to the one used by the llm tool.",
+		default=None,
+	)
 	return parser.parse_args()
 
 
-def run(addon_dir, languages, readme="readme.md", pot_file=None, author_name=None, author_email=None, model_name=None):
+def run(
+	addon_dir,
+	languages,
+	readme="readme.md",
+	pot_file=None,
+	author_name=None,
+	author_email=None,
+	model_name=None,
+):
 	if author_name is None or author_email is None:
 		git_name, git_email = get_author_info_from_git()
 		if author_name is None:
@@ -128,28 +187,38 @@ def run(addon_dir, languages, readme="readme.md", pot_file=None, author_name=Non
 			author_email = git_email
 	author = f"{author_name} <{author_email}>"
 	if not os.path.isdir(addon_dir):
-		raise ValueError(f"Error: Could not find {addon_dir} directory. Please provide a valid path to the add-on.")
+		raise ValueError(
+			f"Error: Could not find {addon_dir} directory. Please provide a valid path to the add-on."
+		)
 	manifest_file = os.path.join(addon_dir, "manifest.ini")
 	if not os.path.isfile(manifest_file):
-		raise ValueError(f"Error: Could not find manifest.ini in the {addon_dir} directory.")
+		raise ValueError(
+			f"Error: Could not find manifest.ini in the {addon_dir} directory."
+		)
 	with open(manifest_file, "r", encoding="utf-8") as f:
 		contents = f.read()
 	contents = "[DEFAULT]\n" + contents  # configparser likes to have a section
 	config = configparser.ConfigParser()
 	config.read_string(contents)
 	if "name" not in config["DEFAULT"]:
-		raise ValueError("Error: "name" not found in manifest.ini")
+		raise ValueError("Error: 'name' not found in manifest.ini")
 	addon_name = config["DEFAULT"]["name"]
 	if pot_file is None:
 		pot_file = addon_name + ".pot"
 	if not os.path.isfile(pot_file):
-		raise FileNotFoundError(f"Error: The pot file {pot_file} could not be found. Please run `scons pot` to generate one.")
+		raise FileNotFoundError(
+			f"Error: The pot file {pot_file} could not be found. Please run `scons pot` to generate one."
+		)
 	if not os.path.isfile(readme):
 		raise FileNotFoundError(f"Error: The readme file {readme} does not exist.")
 	langs = languages if isinstance(languages, list) else languages.split()
 	pretty_langs = validate_languages(langs)
 	model = get_llm_model(model_name)
-	print("Translating {} to language(s): {} using {}".format(addon_name, ", ".join(pretty_langs), model.model_id))
+	print(
+		"Translating {} to language(s): {} using {}".format(
+			addon_name, ", ".join(pretty_langs), model.model_id
+		)
+	)
 	print("Documentation...")
 	translate_docs(readme, addon_dir, model, langs)
 	print("Manifests...")
@@ -160,4 +229,12 @@ def run(addon_dir, languages, readme="readme.md", pot_file=None, author_name=Non
 
 if __name__ == "__main__":
 	args = parse_args()
-	run(args.input, args.languages, args.readme, pot_file=args.pot, author_name=args.author_name, author_email=args.author_email, model_name=args.model)
+	run(
+		args.input,
+		args.languages,
+		args.readme,
+		pot_file=args.pot,
+		author_name=args.author_name,
+		author_email=args.author_email,
+		model_name=args.model,
+	)
